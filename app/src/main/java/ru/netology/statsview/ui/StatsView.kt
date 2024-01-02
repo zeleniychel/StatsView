@@ -1,5 +1,6 @@
 package ru.netology.statsview.ui
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -7,6 +8,7 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import android.view.animation.LinearInterpolator
 import androidx.core.content.withStyledAttributes
 import ru.netology.statsview.R
 import ru.netology.statsview.utils.AndroidUtils
@@ -24,9 +26,16 @@ class StatsView @JvmOverloads constructor(
     defStyleAttr,
     defStyleRes
 ) {
+    private var radius = 0F
+    private var center = PointF()
+    private var oval = RectF()
+
     private var textSize = AndroidUtils.dp(context, 20).toFloat()
     private var lineWidth = AndroidUtils.dp(context, 5)
     private var colors = emptyList<Int>()
+
+    private var progress = 0F
+    private var valueAnimator: ValueAnimator? = null
 
 
     private fun generateRandomColor() =
@@ -48,29 +57,21 @@ class StatsView @JvmOverloads constructor(
     var data: List<Float> = emptyList()
         set(value) {
             field = value
-            invalidate()
+            update()
         }
-    private var radius = 0F
-    private var center = PointF()
-    private var oval = RectF()
-    private val paint = Paint(
-        Paint.ANTI_ALIAS_FLAG
-    ).apply {
+
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         strokeWidth = lineWidth.toFloat()
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
     }
-    private val textPint = Paint(
-        Paint.ANTI_ALIAS_FLAG
-    ).apply {
+    private val textPint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textSize = this@StatsView.textSize
         style = Paint.Style.FILL
         textAlign = Paint.Align.CENTER
     }
-    private val pointPaint = Paint(
-        Paint.ANTI_ALIAS_FLAG
-    ).apply {
+    private val pointPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         strokeWidth = lineWidth.toFloat()
         strokeCap = Paint.Cap.ROUND
         color = colors[0]
@@ -94,7 +95,7 @@ class StatsView @JvmOverloads constructor(
         data.forEachIndexed { index, datum ->
             val angle = (datum / data.sum()) * 360F
             paint.color = colors.getOrElse(index) { generateRandomColor() }
-            canvas.drawArc(oval, startAngle, angle, false, paint)
+            canvas.drawArc(oval, startAngle, angle * progress, false, paint)
             startAngle += angle
         }
         val total = data.map { (it / data.sum()) * 100 }
@@ -106,5 +107,23 @@ class StatsView @JvmOverloads constructor(
             textPint
         )
         canvas.drawPoint(center.x, center.y - radius, pointPaint)
+    }
+
+    private fun update() {
+        valueAnimator?.let {
+            it.removeAllListeners()
+            it.cancel()
+        }
+        progress = 0F
+        valueAnimator = ValueAnimator.ofFloat(0F,1F).apply {
+            addUpdateListener { anim->
+                progress = anim.animatedValue as Float
+                invalidate()
+            }
+            duration = 500
+            interpolator = LinearInterpolator()
+        }.also {
+            it.start()
+        }
     }
 }
