@@ -54,9 +54,17 @@ class StatsView @JvmOverloads constructor(
         }
     }
 
+    data class ArcData(val progressStart: Float, val progressEnd: Float)
+    private var arcData: List<ArcData> = emptyList()
     var data: List<Float> = emptyList()
         set(value) {
             field = value
+            var cumulativeProgress = 0f
+            arcData = value.map { datum ->
+                val arcDatum = ArcData(cumulativeProgress, cumulativeProgress + datum)
+                cumulativeProgress += datum
+                arcDatum
+            }
             update()
         }
 
@@ -88,11 +96,16 @@ class StatsView @JvmOverloads constructor(
         if (data.isEmpty())
             return
         var startAngle = -90F
-        data.forEachIndexed { index, datum ->
-            val angle = (datum / data.sum()) * 360F
+        arcData.forEachIndexed { index, datum ->
+            val sweepAngleTotal = data[index] / data.sum() * 360F
+            val progressWithinArc = (progress - datum.progressStart).coerceAtLeast(0F)
+                .coerceAtMost(datum.progressEnd - datum.progressStart)
+            val sweepAngle = sweepAngleTotal*(progressWithinArc/data[index])
             paint.color = colors.getOrElse(index) { generateRandomColor() }
-            canvas.drawArc(oval, startAngle, angle * progress, false, paint)
-            startAngle += angle
+            if (progressWithinArc > 0) {
+                canvas.drawArc(oval,startAngle,sweepAngle,false,paint)
+            }
+            startAngle += sweepAngleTotal
         }
         canvas.drawPoint(center.x, center.y - radius, pointPaint)
     }
@@ -103,12 +116,12 @@ class StatsView @JvmOverloads constructor(
             it.cancel()
         }
         progress = 0F
-        valueAnimator = ValueAnimator.ofFloat(0F, 1F).apply {
+        valueAnimator = ValueAnimator.ofFloat(0F, data.sum()).apply {
             addUpdateListener { anim ->
                 progress = anim.animatedValue as Float
                 invalidate()
             }
-            duration = 1500
+            duration = 1500 * data.size.toLong()
             interpolator = LinearInterpolator()
         }.also {
             it.start()

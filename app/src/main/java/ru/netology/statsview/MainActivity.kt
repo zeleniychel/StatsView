@@ -23,10 +23,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             )
             viewText.data = view.data
 
-            view.animate()
-                .rotation(360F)
-                .setDuration(1500)
-                .start()
         }
 //        view.startAnimation(
 //            AnimationUtils.loadAnimation(this, R.anim.animation).apply {
