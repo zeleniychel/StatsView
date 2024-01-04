@@ -66,11 +66,7 @@ class StatsView @JvmOverloads constructor(
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
     }
-    private val textPint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = this@StatsView.textSize
-        style = Paint.Style.FILL
-        textAlign = Paint.Align.CENTER
-    }
+
     private val pointPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         strokeWidth = lineWidth.toFloat()
         strokeCap = Paint.Cap.ROUND
@@ -98,14 +94,6 @@ class StatsView @JvmOverloads constructor(
             canvas.drawArc(oval, startAngle, angle * progress, false, paint)
             startAngle += angle
         }
-        val total = data.map { (it / data.sum()) * 100 }
-
-        canvas.drawText(
-            "%.2f%%".format(total.sum()),
-            center.x,
-            center.y + textPint.textSize / 4,
-            textPint
-        )
         canvas.drawPoint(center.x, center.y - radius, pointPaint)
     }
 
@@ -115,12 +103,12 @@ class StatsView @JvmOverloads constructor(
             it.cancel()
         }
         progress = 0F
-        valueAnimator = ValueAnimator.ofFloat(0F,1F).apply {
-            addUpdateListener { anim->
+        valueAnimator = ValueAnimator.ofFloat(0F, 1F).apply {
+            addUpdateListener { anim ->
                 progress = anim.animatedValue as Float
                 invalidate()
             }
-            duration = 500
+            duration = 1500
             interpolator = LinearInterpolator()
         }.also {
             it.start()

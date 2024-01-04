@@ -1,27 +1,33 @@
 package ru.netology.statsview
 
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
-import android.view.animation.BounceInterpolator
-import android.view.animation.LinearInterpolator
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ru.netology.statsview.ui.StatsView
+import ru.netology.statsview.ui.StatsViewText
 
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val view = findViewById<StatsView>(R.id.statsView)
-        view.data = listOf(
-            500F,
-            500F,
-            500F,
-            500F,
-        )
+        val viewText = findViewById<StatsViewText>(R.id.statsViewText)
+        lifecycleScope.launch {
+            delay(2000)
+            view.data = listOf(
+                500F,
+                500F,
+                500F,
+                500F,
+            )
+            viewText.data = view.data
+
+            view.animate()
+                .rotation(360F)
+                .setDuration(1500)
+                .start()
+        }
 //        view.startAnimation(
 //            AnimationUtils.loadAnimation(this, R.anim.animation).apply {
 //                setAnimationListener(object : Animation.AnimationListener {
