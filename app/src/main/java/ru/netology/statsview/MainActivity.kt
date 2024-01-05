@@ -6,13 +6,11 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.netology.statsview.ui.StatsView
-import ru.netology.statsview.ui.StatsViewText
 
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val view = findViewById<StatsView>(R.id.statsView)
-        val viewText = findViewById<StatsViewText>(R.id.statsViewText)
         lifecycleScope.launch {
             delay(2000)
             view.data = listOf(
@@ -21,8 +19,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 500F,
                 500F,
             )
-            viewText.data = view.data
-
         }
 //        view.startAnimation(
 //            AnimationUtils.loadAnimation(this, R.anim.animation).apply {

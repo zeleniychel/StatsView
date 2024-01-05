@@ -54,17 +54,9 @@ class StatsView @JvmOverloads constructor(
         }
     }
 
-    data class ArcData(val progressStart: Float, val progressEnd: Float)
-    private var arcData: List<ArcData> = emptyList()
     var data: List<Float> = emptyList()
         set(value) {
             field = value
-            var cumulativeProgress = 0f
-            arcData = value.map { datum ->
-                val arcDatum = ArcData(cumulativeProgress, cumulativeProgress + datum)
-                cumulativeProgress += datum
-                arcDatum
-            }
             update()
         }
 
@@ -74,7 +66,11 @@ class StatsView @JvmOverloads constructor(
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
     }
-
+    private val textPint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = this@StatsView.textSize
+        style = Paint.Style.FILL
+        textAlign = Paint.Align.CENTER
+    }
     private val pointPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         strokeWidth = lineWidth.toFloat()
         strokeCap = Paint.Cap.ROUND
@@ -95,19 +91,25 @@ class StatsView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         if (data.isEmpty())
             return
+
+        val saveCount = canvas.save()
+        canvas.rotate(progress * 360F, center.x, center.y)
         var startAngle = -90F
-        arcData.forEachIndexed { index, datum ->
-            val sweepAngleTotal = data[index] / data.sum() * 360F
-            val progressWithinArc = (progress - datum.progressStart).coerceAtLeast(0F)
-                .coerceAtMost(datum.progressEnd - datum.progressStart)
-            val sweepAngle = sweepAngleTotal*(progressWithinArc/data[index])
+        data.forEachIndexed { index, datum ->
+            val angle = (datum / data.sum()) * 360F
             paint.color = colors.getOrElse(index) { generateRandomColor() }
-            if (progressWithinArc > 0) {
-                canvas.drawArc(oval,startAngle,sweepAngle,false,paint)
-            }
-            startAngle += sweepAngleTotal
+            canvas.drawArc(oval, startAngle, angle * progress, false, paint)
+            startAngle += angle
         }
-        canvas.drawPoint(center.x, center.y - radius, pointPaint)
+        canvas.restoreToCount(saveCount)
+        val total = data.map { (it / data.sum()) * 100 }
+
+        canvas.drawText(
+            "%.2f%%".format(total.sum()),
+            center.x,
+            center.y + textPint.textSize / 4,
+            textPint
+        )
     }
 
     private fun update() {
@@ -116,12 +118,12 @@ class StatsView @JvmOverloads constructor(
             it.cancel()
         }
         progress = 0F
-        valueAnimator = ValueAnimator.ofFloat(0F, data.sum()).apply {
-            addUpdateListener { anim ->
+        valueAnimator = ValueAnimator.ofFloat(0F,1F).apply {
+            addUpdateListener { anim->
                 progress = anim.animatedValue as Float
                 invalidate()
             }
-            duration = 1500 * data.size.toLong()
+            duration = 2000
             interpolator = LinearInterpolator()
         }.also {
             it.start()
